@@ -480,3 +480,122 @@ Enemy d = b;      // 和 Enemy c = b 一样，都是拷贝构造
 ```
 
 **验证 `=` 初始化和括号初始化都会调拷贝构造**，`[拷贝构造]` 会再打印一次。
+
+---
+
+## 练习 13：继承与多态
+
+文件：`cpp-learning\practice13.cpp`
+
+```
+=== 1. 继承 ===
+Dragon 的 hp = 200
+
+=== 2. 虚函数 ===
+普通敌人受 10 伤：10
+Boss 受 10 伤：5
+
+=== 3. 一次性打全体 ===
+Orc(hp=10)
+Dragon(hp=185)
+
+=== 4. 通过基类引用 ===
+ref.damage_taken(10) = 5
+```
+
+### 七条要求
+
+1. 写 `class Enemy`（基类），含 `name`、`hp`，getter，和 **`virtual int damage_taken(int dmg) const`**（返回 `dmg`）
+2. `Enemy` 必须有 **`virtual ~Enemy() = default;`**
+3. 写 `class Boss : public Enemy`，额外有 `armor`
+4. `Boss` 的构造函数用 `: Enemy(n, h), armor(a)` 调用基类构造
+5. `Boss` 用 **`override`** 改写 `damage_taken`：返回 `dmg - armor`，**小于 0 时返回 0**
+6. 重载 `operator<<`（参数是 `const Enemy &`），输出 `name(hp=N)`
+7. 在 `main` 里演示四段：
+   - 继承：`Boss` 对象调用继承来的 getter
+   - 虚函数：普通敌人受 10 伤 = 10，Boss 受 10 伤 = 5
+   - **多态**：`vector<unique_ptr<Enemy>>` 装 Orc 和 Dragon，遍历打 20 伤，输出各自剩余血量
+   - 通过 `const Enemy &ref = boss;` 调用，确认返回 **5 而不是 10**
+
+### 提示
+
+```cpp
+class Enemy
+{
+protected:
+    std::string name;
+    int hp;
+public:
+    Enemy(std::string n, int h) : name(n), hp(h) {}
+    virtual ~Enemy() = default;
+    std::string get_name() const { return name; }
+    int get_hp() const { return hp; }
+    virtual int damage_taken(int dmg) const { return dmg; }
+};
+
+class Boss : public Enemy
+{
+private:
+    int armor;
+public:
+    Boss(std::string n, int h, int a) : Enemy(n, h), armor(a) {}
+    int damage_taken(int dmg) const override
+    {
+        int r = dmg - armor;
+        return r < 0 ? 0 : r;
+    }
+};
+```
+
+**容器写法：**
+
+```cpp
+std::vector<std::unique_ptr<Enemy>> enemies;
+enemies.push_back(std::make_unique<Enemy>("Orc", 30));
+enemies.push_back(std::make_unique<Boss>("Dragon", 200, 5));
+for (const auto &e : enemies) { e->damage_taken(20); }
+```
+
+### 危险点
+
+**1. 漏掉 `virtual`**
+
+```cpp
+int damage_taken(int dmg) const { return dmg; }        // ❌ 没 virtual
+```
+**结果：`Enemy &ref = boss; ref.damage_taken(10)` 返回 10，不是 5。编译不报错，行为悄悄错了。**
+
+**2. `override` 签名必须和基类完全一致**
+
+```cpp
+int damage_taken(int dmg) override { }      // ❌ 漏了 const
+// error: marked 'override', but does not override
+```
+
+**3. 派生类不能直接初始化基类的 private 成员**
+
+```cpp
+Boss(int h) : hp(h) {}          // ❌ 'hp' is private
+Boss(int h) : Enemy(h) {}       // ✅
+```
+
+**4. 析构必须 `virtual`**
+
+**否则 `delete` 一个 `Enemy*` 指向的 `Boss` 时，只调 `~Enemy()`，`Boss` 自己的析构不执行。**
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| `Enemy e{...}; Boss b{...};` 都调 `damage_taken(10)` | 分别返回 10 和 5 |
+| `const Enemy &ref = boss; ref.damage_taken(10);` | 返回 **5** |
+| 去掉基类的 `virtual` | **同一行返回 10**（编译不报错） |
+| `Boss` 的 `override` 漏写 `const` | **编译错误** |
+| `enemies` 遍历 | Orc 和 Dragon 掉血数不同 |
+| `boss.damage_taken(3)`（伤害 < 护甲） | 返回 **0**，不是负数 |
+
+### 进阶（可选）
+
+再加一个派生类 `Elite : public Enemy`，改写 `damage_taken` 为「只受一半伤害」（`dmg / 2`）。
+
+**然后把它也 `push_back` 进同一个 `vector`**，遍历时三种敌人各自按自己的规则掉血——**同样是 `e->damage_taken(20)`，三种结果。**
