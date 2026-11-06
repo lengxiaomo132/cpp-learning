@@ -1,0 +1,22 @@
+# ---- 编译产物（不要上传） ----
+*.exe
+*.o
+*.obj
+*.pdb
+*.ilk
+*.dll
+*.lib
+*.out
+*.gch
+*.log
+*.stackdump
+
+# ---- 编辑器 / IDE 配置 ----
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---- 系统 / 其他 ----
+Thumbs.db
+.DS_Store
