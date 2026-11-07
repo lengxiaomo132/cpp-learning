@@ -1,6 +1,6 @@
 # 学习进度
 
-> **最后更新**：2026-11-03
+> **最后更新**：2026-11-07
 
 - 学什么 → [cpp-schedule.md](cpp-schedule.md)｜怎么教 → [teaching-notes.md](teaching-notes.md)｜作业要求 → [assignments.md](assignments.md)｜启动指令 → [START-HERE.md](START-HERE.md)
 
@@ -10,8 +10,8 @@
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 第 12 课（析构、拷贝、运算符重载），practice12.cpp ✅ 实测通过 |
-| 下一课 | 第 13 课：继承 + 虚函数 |
+| 已完成 | 第 13 课（继承 + 虚函数），practice13.cpp ✅ 实测通过 |
+| 下一课 | 第 14 课：模板 + lambda |
 | 学生水平 | 有 Python/Java 概念，C++ 从零起步 |
 
 ---
@@ -33,6 +33,7 @@
 | 10 | 栈 / 堆 / unique_ptr | practice10.cpp | ✅ |
 | 11 | 类：封装、const、初始化列表 | practice11.cpp | ✅ |
 | 12 | 析构、拷贝、运算符重载 | practice12.cpp | ✅ |
+| 13 | 继承 + 虚函数 | practice13.cpp | ✅ |
 
 > practice04b.cpp 兼作循环补充与函数重构成果，没有单独的 practice05。
 
@@ -55,10 +56,11 @@
 | 10 | **栈 vs 堆**、`new`/`delete`、`std::make_unique`/`unique_ptr`、构造/析构打印时机、`p`（栈上的管家）vs `*p`（堆上的对象）、判空、`reset()`/`release()` 区别 |
 | 11 | **`class` 与 `private`/`public`**、getter/setter、**初始化列表**、**`const` 三种用法**（const 变量 / const 成员函数 / const 对象）、**`auto`**、**range-for 与 `const auto &`**、`explicit`（学生自用） |
 | 12 | **析构函数**（时机、逆序）、**拷贝构造函数** `const 类名 &`（为什么必须 `&` 和 `const`）、副本在不同地址、**`operator<<` 重载**（`std::ostream &` 返回值、用 `os` 不用 `std::cout`、`return os`）、`void` vs `std::ostream &`、临时对象在完整语句结束时析构 |
+| 13 | **继承**（`class Boss : public Enemy`）、**`protected`**、**`virtual` 与多态**、**`override`**、**虚析构**、派生类两段析构（`~Boss`→`~Enemy`）、`vector` 元素正序析构 vs 局部变量逆序 |
 
 **已讲解未练习**：无
 
-**尚未接触**：`std::map`、模板、lambda、多文件工程、移动语义、继承
+**尚未接触**：`std::map`、模板、lambda、多文件工程、移动语义
 
 **待补练**：
 
@@ -76,6 +78,11 @@
 
 - [ ] 「对象是栈上的」指 `unique_ptr` 变量本身，被管的 `Enemy` 在堆上
 - [ ] `if (p)` 的「空」= 内部指针为 `nullptr`（没管任何对象），不是 `Enemy` 为空
+
+**概念易混（第 13 课发现）**：
+
+- [ ] **析构顺序分三种情况**：局部变量**逆序**（后建先拆）；`vector` 元素**正序**（从前往后）；派生类对象**先派生后基类**
+- [ ] 基类引用限制了「你能写什么」（编译期），虚函数决定「实际调用谁」（运行期），两件事分开看
 
 **已借用但没正式教**（🔵 看过、不用会写，勿进「已掌握」）：
 
@@ -109,9 +116,10 @@
 | 改一半就交回 | 2 次 | `practice09b` 改了函数名没改调用处；`practice11` 上一轮 4 条建议只改了 1 条，还留 `unused variable` 警告 | **交作业前把上次的问题清单逐条打勾** |
 | 该调的成员函数没调，用近似表达式代替 | 1 次 | `is_alive()` 写成了 `get_hp() ? true : false`，碰巧同义才没被发现 | 函数写出来了就一定要调到 |
 | `operator<<` 里写死 `std::cout` | 未发生（预防） | 函数里该用参数 `os` 却用了 `std::cout`，导致 `cerr`、文件流全部输出到屏幕，且**编译不报错** | 写 `operator<<` 时通读一遍：有没有直接出现 `std::cout` |
+| 忘了带括号调用函数 | 1 次 | `d.get_name` 少了 `()`，报 `<unresolved overloaded function type>` | 打印函数返回值时检查有没有 `()` |
 
 ---
 
 ## 待办
 
-- [ ] 第 13 课：继承 + 虚函数——课表要求：基类 Enemy + 派生 Boss，用基类指针得到不同行为
+- [ ] 第 14 课：模板 + lambda——课表要求：写 `template<typename T> max_of`；用 lambda 按 hp 排序
