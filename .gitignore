@@ -20,3 +20,5 @@
 # ---- 系统 / 其他 ----
 Thumbs.db
 .DS_Store
+
+docs/powershell-up.ps1
