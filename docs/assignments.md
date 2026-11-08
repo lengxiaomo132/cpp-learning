@@ -16,8 +16,9 @@
 | [练习 13](#练习-13继承与多态) | 继承与多态 | 第 13 课 继承 + 虚函数 |
 | [练习 14](#练习-14模板与-lambda) | 模板与 lambda | 第 14 课 模板 + lambda |
 | [练习 14b](#练习-14b背包统计) | 背包统计 | 第 14.5 课 map |
+| [练习 15](#练习-15拆成三个文件) | 拆成三个文件 | 第 15 课 多文件工程 |
 
-**当前作业：练习 14b**
+**当前作业：练习 15**
 
 ---
 
@@ -825,3 +826,134 @@ for (auto &p : vec)
 ```
 
 **你会发现代码变长了很多，而且每次查找都要遍历整条列表。** 这就是 `map` 存在的理由。
+
+---
+
+## 练习 15：拆成三个文件
+
+新建目录：`cpp-learning\practice15\`，内含 **三个文件**：
+
+```
+practice15/
+├── enemy.h
+├── enemy.cpp
+└── main.cpp
+```
+
+```
+名字：Orc
+血量：40
+受到 15 伤害后：25
+受到 100 伤害后：0
+状态：已倒下
+```
+
+### 七条要求
+
+1. `enemy.h` 第一行写 **`#pragma once`**
+2. `enemy.h` 里定义 `class Enemy`，private 有 `name`（`std::string`）、`hp`（`int`）
+3. `enemy.h` 里只写**函数声明**（不写函数体）：
+
+   ```cpp
+   Enemy(std::string n, int h);
+   std::string get_name() const;
+   int get_hp() const;
+   void take_damage(int dmg);
+   bool is_alive() const;
+   ```
+
+4. `enemy.cpp` **第一行** `#include "enemy.h"`，然后写所有函数的**实现**，每个都带 `Enemy::`
+5. `take_damage` 把血量扣到 **0 为止**（不为负）
+6. `main.cpp` 里 `#include "enemy.h"`，创建 `Enemy{"Orc", 40}`，按示例输出四段
+7. 用下面的命令**一次编译两个 `.cpp`**（`.h` 不列）：
+
+   ```
+   g++ -std=c++17 -Wall -Wextra -o app.exe main.cpp enemy.cpp
+   ```
+
+### 提示
+
+```cpp
+// enemy.h
+#pragma once
+#include <string>
+
+class Enemy
+{
+private:
+    std::string name;
+    int hp;
+
+public:
+    Enemy(std::string n, int h);
+    int get_hp() const;
+    void take_damage(int dmg);
+};
+```
+
+```cpp
+// enemy.cpp
+#include "enemy.h"
+
+Enemy::Enemy(std::string n, int h) : name(n), hp(h) {}
+
+int Enemy::get_hp() const { return hp; }
+
+void Enemy::take_damage(int dmg)
+{
+    hp -= dmg;
+    if (hp < 0) hp = 0;
+}
+```
+
+**注意 `.cpp` 里的 `Enemy::`——每个函数前面都要有。**
+
+### 危险点
+
+**1. `.cpp` 里忘了 `Enemy::`**
+
+```cpp
+int get_hp() const { return hp; }      // ❌
+// error: non-member function 'int get_hp()' cannot have cv-qualifier
+```
+
+**看到 `cv-qualifier` 就查：是不是漏了 `类名::`。**
+
+**2. 忘了 `#pragma once`**
+
+同一份头文件被包含两次时：
+```
+error: redefinition of 'class Enemy'
+```
+
+**3. 编译时漏了 `enemy.cpp`**
+
+编译能过，但**链接**失败：
+```
+undefined reference to `Enemy::Enemy(std::string, int)'
+```
+
+**`undefined reference` 是链接错误——说明某个 `.cpp` 没参与编译。**
+
+**4. `.h` 里写了函数体**
+
+```cpp
+int get_hp() const { return hp; }    // ❌ 写在 .h 里
+```
+
+**如果两个 `.cpp` 都包含它，就是重复定义。修复方式要么把实现挪到 `.cpp`，要么加 `inline`。**
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| 编译三个文件 | `g++ -std=c++17 -Wall -Wextra -o app.exe main.cpp enemy.cpp` 零警告 |
+| 运行 | 四条输出与示例一致 |
+| 受伤 100 后血量 | **0**，不是 -60 |
+| 去掉 `#pragma once` 并让 `main.cpp` 两次 include | **`redefinition of 'class Enemy'`** |
+| 编译时只给 `main.cpp` | **`undefined reference`** |
+| `enemy.cpp` 里漏 `Enemy::` | **编译错误** |
+
+### 进阶（可选）
+
+再加第四个文件 `enemy_util.h`（只含一个函数声明 `int damage_roll(int min, int max);`），在 `main.cpp` 里包含它，**故意让它和 `enemy.h` 互相包含**，验证 `#pragma once` 能否挡住无限展开。
