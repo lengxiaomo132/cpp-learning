@@ -10,8 +10,8 @@
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 第 14 课（模板 + lambda），practice14.cpp ✅ 实测通过 |
-| 下一课 | 第 14.5 课：map 与 unordered_map |
+| 已完成 | 第 14.5 课（map 与 unordered_map），practice14b.cpp ✅ 实测通过 |
+| 下一课 | 第 15 课：多文件工程 |
 | 学生水平 | 有 Python/Java 概念，C++ 从零起步 |
 
 ---
@@ -35,6 +35,7 @@
 | 12 | 析构、拷贝、运算符重载 | practice12.cpp | ✅ |
 | 13 | 继承 + 虚函数 | practice13.cpp | ✅ |
 | 14 | 模板 + lambda | practice14.cpp | ✅ |
+| 14.5 | map 与 unordered_map | practice14b.cpp | ✅ |
 
 > practice04b.cpp 兼作循环补充与函数重构成果，没有单独的 practice05。
 
@@ -59,10 +60,11 @@
 | 12 | **析构函数**（时机、逆序）、**拷贝构造函数** `const 类名 &`（为什么必须 `&` 和 `const`）、副本在不同地址、**`operator<<` 重载**（`std::ostream &` 返回值、用 `os` 不用 `std::cout`、`return os`）、`void` vs `std::ostream &`、临时对象在完整语句结束时析构 |
 | 13 | **继承**（`class Boss : public Enemy`）、**`protected`**、**`virtual` 与多态**、**`override`**、**虚析构**、派生类两段析构（`~Boss`→`~Enemy`）、`vector` 元素正序析构 vs 局部变量逆序 |
 | 14 | **函数模板** `template <typename T>`、类型推导与限制（同类型、需支持操作）、**lambda** `[](){}`、**捕获列表** `[x]`/`[&x]`/`[=]`/`[&]`、`std::sort` + lambda 比较器、**比较器必须严格弱序（用 `<` 不用 `<=`）** |
+| 14.5 | **`std::map` / `std::unordered_map`**、`operator[]` 自动插入、`find`+`end()`、`count`（数键不数值）、`erase`、结构化绑定 `[k, v]`、有序 vs 查找速度的取舍 |
 
 **已讲解未练习**：无
 
-**尚未接触**：`std::map`、多文件工程、移动语义
+**尚未接触**：多文件工程、移动语义
 
 **待补练**：
 
@@ -131,4 +133,4 @@
 
 ## 待办
 
-- [ ] 第 14.5 课：map 与 unordered_map——课表要求：用 map 统计词频；说清两者在"有序"和"查找速度"上的取舍
+- [ ] 第 15 课：多文件工程——课表要求：拆成 `main.cpp / player.h / player.cpp` 并编译通过

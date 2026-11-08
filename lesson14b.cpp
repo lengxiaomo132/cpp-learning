@@ -77,7 +77,8 @@ int main()
     // ===== 6. 删掉它 =====
     count_map.erase("axe");
     std::cout << "  erase 之后 size() = " << count_map.size() << '\n';
-
+    std::cout << "  count(\"axe\") = " << count_map.count("axe")
+              << "  <- 它被删掉了\n";
     // ===== 7. 遍历时用 first / second =====
     std::cout << "\n=== 5. 遍历的两种写法 ===\n";
     for (const auto &[key, value] : count_map) // 结构化绑定（C++17，借用）
