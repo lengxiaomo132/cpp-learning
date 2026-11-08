@@ -14,8 +14,10 @@
 | [练习 11](#练习-11把-player-改成-class) | 把 Player 改成 class | 第 11 课 类与封装 |
 | [练习 12](#练习-12生命周期与输出) | 生命周期与输出 | 第 12 课 析构/拷贝/运算符重载 |
 | [练习 13](#练习-13继承与多态) | 继承与多态 | 第 13 课 继承 + 虚函数 |
+| [练习 14](#练习-14模板与-lambda) | 模板与 lambda | 第 14 课 模板 + lambda |
+| [练习 14b](#练习-14b背包统计) | 背包统计 | 第 14.5 课 map |
 
-**当前作业：练习 13（已完成）**
+**当前作业：练习 14b**
 
 ---
 
@@ -613,3 +615,213 @@ Boss(int h) : Enemy(h) {}       // ✅
 再加一个派生类 `Elite : public Enemy`，改写 `damage_taken` 为「只受一半伤害」（`dmg / 2`）。
 
 **然后把它也 `push_back` 进同一个 `vector`**，遍历时三种敌人各自按自己的规则掉血——**同样是 `e->damage_taken(20)`，三种结果。**
+
+---
+
+## 练习 14：模板与 lambda
+
+文件：`cpp-learning\practice14.cpp`
+
+```
+=== 1. 模板函数 ===
+max_of(3, 7) = 7
+max_of(2.5, 1.5) = 2.5
+max_of(apple, pear) = pear
+
+=== 2. lambda ===
+square(6) = 36
+add(3, 4) = 7
+
+=== 3. 按 hp 排序 ===
+排序前：
+  Orc(hp=30)
+  Dragon(hp=200)
+  Goblin(hp=15)
+排序后：
+  Goblin(hp=15)
+  Orc(hp=30)
+  Dragon(hp=200)
+```
+
+### 六条要求
+
+1. 写函数模板 `template <typename T> T max_of(T a, T b)`，返回较大者
+2. 用 `int`、`double`、`std::string` 三种类型各调用一次 `max_of`
+3. 写一个 lambda `square`，求一个 `int` 的平方，调用并打印 `square(6)`
+4. 写一个 lambda `add`，两个 `int` 相加，调用并打印 `add(3, 4)`
+5. 用 `class Enemy`（含 `name`、`hp`、getter、`virtual ~Enemy() = default`）和 `class Boss : public Enemy`
+6. 用 `vector<unique_ptr<Enemy>>` 装 Orc(30)、Dragon(200)、Goblin(15)，用 **`std::sort` + lambda** 按 `hp` 从小到大排序，排序前后各打印一次
+
+### 提示
+
+```cpp
+#include <algorithm>   // std::sort
+
+template <typename T>
+T max_of(T a, T b) { return a > b ? a : b; }
+
+auto square = [](int x) { return x * x; };
+
+std::sort(enemies.begin(), enemies.end(),
+          [](const std::unique_ptr<Enemy> &a, const std::unique_ptr<Enemy> &b)
+          {
+              return a->get_hp() < b->get_hp();
+          });
+```
+
+**用 `std::string` 调 `max_of` 时**，两个参数都是 `std::string` 才能推导成功：
+
+```cpp
+max_of(std::string("apple"), std::string("pear"));
+```
+
+### 危险点
+
+**1. 比较器必须用 `<`，不能用 `<=`**
+
+```cpp
+return a->get_hp() < b->get_hp();       // ✅
+return a->get_hp() <= b->get_hp();      // ❌ 小数据不报错，大数据崩溃
+```
+
+**实测：2000 个元素的 `vector<int>` 用 `<=` 排序 → 崩溃（`0xC0000374` 堆损坏）。**
+
+**2. lambda 结尾要分号**
+
+```cpp
+auto f = [](int x) { return x * x; }     // ❌ 少分号
+// error: expected ',' or ';' before 'std'
+```
+
+**3. `max_of` 两个参数类型必须一致**
+
+```cpp
+max_of(1, 2.5);      // ❌ no matching function
+max_of<double>(1, 2.5);   // ✅
+```
+
+**4. `std::sort` 需要 `#include <algorithm>`**
+
+**5. 排序 lambda 里用 `->` 不用 `.`**
+
+`a` 是 `unique_ptr<Enemy>`，所以是 `a->get_hp()`。
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| `max_of(3, 7)` | 7 |
+| `max_of(2.5, 1.5)` | 2.5 |
+| `max_of("apple","pear")` | pear |
+| `square(6)` | 36 |
+| 排序前打印 | Orc、Dragon、Goblin（插入顺序） |
+| 排序后打印 | **Goblin、Orc、Dragon**（按 hp） |
+| 比较器改成 `<=` | 三个元素时可能正常，**数据量大时才崩** |
+
+### 进阶（可选）
+
+把排序改成**按名字**排（`a->get_name() < b->get_name()`），观察结果不同。
+
+**然后写第二个 lambda `desc`，把排序改成从大到小**（`a->get_hp() > b->get_hp()`），验证能否正确倒序。
+
+---
+
+## 练习 14b：背包统计
+
+文件：`cpp-learning\practice14b.cpp`
+
+```
+=== 1. map 统计 ===
+  bow : 1
+  potion : 1
+  shield : 2
+  sword : 3
+
+=== 2. 查找 ===
+  sword 出现了 3 次
+  axe 不存在
+
+=== 3. operator[] 的陷阱 ===
+  查 axe 之前 size = 4
+  查 axe 之后 size = 5   <- 被插入了
+  erase 之后 size = 4
+
+=== 4. unordered_map 验证 ===
+  u["sword"] = 3
+  u.count("sword") = 1   <- count 问的是"有几个键"，不是"计数值"
+```
+
+### 五条要求
+
+1. 用 `std::map<std::string, int>` 统计 `{"sword","shield","sword","potion","sword","shield","bow"}` 的词频
+2. 用 **`find`** 查 `"sword"`，存在则打印次数；用 **`find`** 查 `"axe"`，不存在则打印「不存在」
+3. 演示 **`operator[]` 的副作用**：查 `"axe"` 之前和之后各打印一次 `size()`，证明多了条目；然后 `erase` 掉，再打印 `size()`
+4. 用 `std::unordered_map` 重新统计一遍，打印 `u["sword"]`（应为 3）和 `u.count("sword")`（应为 1）
+5. 用 `const auto &[key, value]` 遍历打印 map 的内容
+
+### 提示
+
+```cpp
+#include <map>
+#include <unordered_map>
+
+std::map<std::string, int> m;
+for (const auto &w : words) ++m[w];
+
+auto it = m.find("sword");
+if (it != m.end()) std::cout << it->second;
+
+if (m.count("axe") == 0) std::cout << "不存在";
+
+for (const auto &[k, v] : m) std::cout << k << " : " << v << '\n';
+```
+
+### 危险点
+
+**1. `operator[]` 查不存在的键会插入**
+
+```cpp
+int n = m["axe"];        // ⚠️ 插入了一个 0，size() 变大
+```
+
+**只想查询就用 `find` 或 `count`。**
+
+**2. `find` 之后必须比较 `end()`**
+
+```cpp
+auto it = m.find("axe");
+it->second;              // ❌ 没找到时是 end()，解引用未定义行为
+if (it != m.end()) { it->second; }    // ✅
+```
+
+**3. `map` 和 `unordered_map` 需要不同的头文件**
+
+```cpp
+#include <map>
+#include <unordered_map>
+```
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| 统计结果 | `sword:3, shield:2, bow:1, potion:1` |
+| map 遍历顺序 | **按字母序**（bow, potion, shield, sword） |
+| `find("axe")` | 返回 `end()`，不插入 |
+| 查 `m["axe"]` 后 `size()` | **从 4 变成 5** |
+| `erase("axe")` 后 `size()` | 回到 4 |
+| `u["sword"]` | **3**（统计值） |
+| `u.count("sword")` | **1**（表示"存在一个 sword 键"，不是次数） |
+
+### 进阶（可选）
+
+把统计用的容器换成 `std::vector<std::pair<std::string, int>>`，**手动实现“查找已有条目”**：
+
+```cpp
+for (auto &p : vec)
+{
+    if (p.first == w) { ++p.second; found = true; break; }
+}
+```
+
+**你会发现代码变长了很多，而且每次查找都要遍历整条列表。** 这就是 `map` 存在的理由。
