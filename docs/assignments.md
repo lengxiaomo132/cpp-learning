@@ -17,8 +17,10 @@
 | [练习 14](#练习-14模板与-lambda) | 模板与 lambda | 第 14 课 模板 + lambda |
 | [练习 14b](#练习-14b背包统计) | 背包统计 | 第 14.5 课 map |
 | [练习 15](#练习-15拆成三个文件) | 拆成三个文件 | 第 15 课 多文件工程 |
+| [练习 16](#练习-16敌人计数器) | 敌人计数器 | 第 16 课 static 成员 |
+| [练习 17](#练习-17拷贝-vs-移动) | 拷贝 vs 移动 | 第 17 课 移动语义 |
 
-**当前作业：练习 15**
+**当前作业：练习 17**
 
 ---
 
@@ -957,3 +959,271 @@ int get_hp() const { return hp; }    // ❌ 写在 .h 里
 ### 进阶（可选）
 
 再加第四个文件 `enemy_util.h`（只含一个函数声明 `int damage_roll(int min, int max);`），在 `main.cpp` 里包含它，**故意让它和 `enemy.h` 互相包含**，验证 `#pragma once` 能否挡住无限展开。
+
+---
+
+## 练习 16：敌人计数器
+
+文件：`cpp-learning\practice16.cpp`
+
+```
+=== 1. 初始状态 ===
+当前敌人数 = 0
+
+=== 2. 创建三个 ===
+创建 Orc，当前共 1 个
+创建 Goblin，当前共 2 个
+创建 Dragon，当前共 3 个
+此时 count() = 3
+销毁 Dragon，当前共 2 个
+
+=== 3. 销毁一个 ===
+销毁 Goblin，当前共 1 个
+销毁 Orc，当前共 0 个
+
+=== 4. 再创建一个 ===
+创建 Slime，当前共 1 个
+Slime 的名字是 Slime
+Enemy::count() = 1   <- 所有对象共享
+销毁 Slime，当前共 0 个
+```
+
+> 第 3 段的输出取决于你的 `{}` 嵌套方式。**关键是：Dragon 先销毁（内层作用域），剩 2 个；离开大括号时 Goblin、Orc 逆序销毁，回到 0。**
+
+### 六条要求
+
+1. `class Enemy`，private 有 `name`、`hp`，还有 **`static int total;`**
+2. 构造函数和析构函数里分别 `++total` / `--total`，并打印当前总数
+3. 写 **`static int count()`**，返回 `total`
+4. **在类外定义** `int Enemy::total = 0;`
+5. `main` 里用 `{}` 控制作用域，演示创建 3 个、销毁 1 个后的数量变化
+6. 演示两件事：
+   - `Enemy::count()` 用**类名**调用（不用对象）
+   - 打印某个对象的 `get_name()`，对比「对象自己的」vs「共享的」
+
+### 提示
+
+```cpp
+class Enemy
+{
+private:
+    std::string name;
+    int hp;
+    static int total;                 // 声明
+
+public:
+    Enemy(std::string n, int h) : name(n), hp(h)
+    {
+        ++total;
+        std::cout << "创建 " << name << "，当前共 " << total << " 个\n";
+    }
+    ~Enemy()
+    {
+        --total;
+        std::cout << "销毁 " << name << "，当前共 " << total << " 个\n";
+    }
+    std::string get_name() const { return name; }
+    static int count() { return total; }
+};
+
+int Enemy::total = 0;                 // 定义，必须有
+```
+
+**用 `{}` 控制生命周期：**
+
+```cpp
+{
+    Enemy a{"Orc", 30};
+    Enemy b{"Goblin", 15};
+    {
+        Enemy c{"Dragon", 200};       // 内层作用域，离开时销毁
+    }
+    // 这里 Dragon 已销毁，剩 2 个
+}
+```
+
+### 危险点
+
+**1. 忘了类外定义**
+
+```cpp
+class Enemy { static int total; };
+// 少了 int Enemy::total = 0;
+```
+```
+undefined reference to `Enemy::total'
+```
+
+**编译能过，链接失败。**
+
+**2. 静态函数里访问普通成员**
+
+```cpp
+static int count() { return name.size(); }    // ❌
+```
+```
+error: invalid use of member 'Enemy::name' in static member function
+```
+
+**静态函数没有 `this`，不知道是哪个对象的 `name`。**
+
+**3. 用类名调非静态函数**
+
+```cpp
+Enemy::get_name();     // ❌
+```
+```
+error: cannot call member function '...' without object
+```
+
+**4. `count` 和普通成员重名**
+
+**如果类里既有一个 `int count;` 又有 `static int count()`，编译器会报错。** 起名时避开。
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| 程序开始 | `Enemy::count() = 0` |
+| 创建 3 个 | 每次打印的数字递增 1、2、3 |
+| 内层 `{}` 结束 | 打印「销毁 Dragon」，总数回到 2 |
+| 全部 `{}` 结束 | 总数回到 0 |
+| `Enemy::count()` | **不用对象就能调** |
+| 删掉 `int Enemy::total = 0;` | **`undefined reference`** |
+| `static count()` 里访问 `name` | **编译错误** |
+
+### 进阶（可选）
+
+给 `Enemy` 加一个**静态成员函数** `static void reset_total()`，在 `main` 结束后手动清零，观察能否影响还在作用域里的对象计数。
+
+**注意：这会让计数和真实对象数量不一致。** 想想为什么「静态成员变量最好只由构造函数和析构函数管理」。
+
+---
+
+## 练习 17：拷贝 vs 移动
+
+文件：`cpp-learning\practice17.cpp`
+
+```
+=== 1. 左值：拷贝 ===
+[构造] Orc
+[拷贝构造] Orc
+a="Orc"  b="Orc"
+
+=== 2. 右值：移动 ===
+[移动构造] Dragon          ← 用 std::move 才能稳定触发
+
+=== 3. std::move 之后 ===
+move 前 d.name="Dragon"
+[移动构造] Dragon
+e.name="Dragon"
+d.name=""        <- 被搬空
+d.hp=200         <- int 是复制的
+
+=== 4. push_back 的区别 ===
+左值：
+[拷贝构造] Slime
+临时对象：
+[构造] Bat
+[移动构造] Bat
+```
+
+### 八条要求
+
+1. `class Enemy`，private 有 `name`（`std::string`）、`hp`（`int`）
+2. **四个**特殊函数都写出来，每个都打印自己的名字：
+   - `Enemy(const Enemy &other)` → 打印 `[拷贝构造]`
+   - `Enemy(Enemy &&other)` → 打印 `[移动构造]`，用 `std::move(other.name)`
+   - `Enemy &operator=(const Enemy &other)` → 打印 `[拷贝赋值]`
+   - `Enemy &operator=(Enemy &&other)` → 打印 `[移动赋值]`
+3. 加 `~Enemy()`，打印 `[析构]`
+4. 演示 **左值 → 拷贝构造**（`Enemy b = a;`）
+5. 演示 **`std::move` → 移动构造**：`Enemy c = std::move(b);`
+
+   > **注意**：直接写 `Enemy c = Enemy{...};` 可能**不打印移动构造**——C++17 的**复制消除**会直接就地构造，连移动都省了。所以第 2 段用 `std::move` 才能稳定触发移动。
+6. 演示 **`std::move` 前后**：打印 `d.name`、`e.name`、`d.name`（应为空）、`d.hp`（不变）
+7. 演示 **`push_back`**：先传左值（拷贝），再传临时对象（移动）
+8. 演示 **拷贝赋值 vs 移动赋值**（`h = g;` 和 `h = Enemy{...};`）
+
+### 提示
+
+```cpp
+#include <utility>      // std::move
+
+Enemy(Enemy &&other) : name(std::move(other.name)), hp(other.hp)
+{
+    std::cout << "[移动构造] " << name << '\n';
+}
+
+Enemy &operator=(const Enemy &other)
+{
+    name = other.name;
+    hp = other.hp;
+    std::cout << "[拷贝赋值] " << name << '\n';
+    return *this;
+}
+```
+
+**`operator=` 必须返回 `*this`**——否则 `a = b = c` 这种链式赋值会断。
+
+### 危险点
+
+**1. 移动构造的参数是 `Enemy &&`，不是 `const Enemy &`**
+
+```cpp
+Enemy(Enemy &&other)          // ✅ 右值引用
+Enemy(const Enemy &&other)    // ⚠️ const 右值引用，通常不是你想要的
+```
+
+**加 `const` 之后就没法 `std::move(other.name)`** 了（`const` 阻止移动），移动构造会退化成拷贝。
+
+**2. `std::move` 之后原对象不能假设还有值**
+
+```cpp
+Enemy d{"Dragon", 200};
+Enemy e = std::move(d);
+d.get_name();      // ⚠️ 返回空字符串，不是 "Dragon"
+```
+
+**`d` 仍然“有效”（能析构、能重新赋值），但内容已被搬走。**
+
+**3. `int` 不要 `std::move`**
+
+```cpp
+hp(std::move(other.hp))    // ❌ 没意义，int 没有"移动"这回事
+hp(other.hp)               // ✅
+```
+
+**4. `operator=` 忘了 `return *this`**
+
+**编译器可能不报错（因为你要么用返回值，要么不用），但链式赋值会出错。**
+
+**5. 只写了拷贝构造，没写移动构造**
+
+**编译器就不会自动生成移动构造。** 结果：`std::move` 也会走拷贝（因为它能绑到 `const Enemy &`）。
+
+**这正好是「Rule of Three」存在的原因——三个（五个）要么都写，要么都不写。**
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| `Enemy b = a;`（a 是左值） | 打印 **`[拷贝构造]`** |
+| `Enemy c = Enemy{...};`（右值） | 打印 **`[移动构造]`** |
+| `Enemy e = std::move(d);` | 打印 `[移动构造]`，之后 `d.name` 是 **`""`** |
+| `d.hp` 在 move 之后 | **不变**（int 是复制的） |
+| `v.push_back(f)`（f 是左值） | 打印 `[拷贝构造]` |
+| `v.push_back(Enemy{...})` | 打印 `[移动构造]` |
+| `h = g;` | 打印 `[拷贝赋值]` |
+| `h = Enemy{...};` | 打印 `[移动赋值]` |
+| 删掉移动构造 | **`std::move` 也会走拷贝构造** |
+
+### 进阶（可选）
+
+写一个 `Enemy make_enemy()` 函数，`return Enemy{"Boss", 100};`，然后：
+
+```cpp
+Enemy x = make_enemy();
+```
+
+**观察打印了哪些构造。** C++17 起有「返回值优化」，可能什么都不打印——**这说明编译器直接在你需要的地方构造，连移动都省了。**
