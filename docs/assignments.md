@@ -20,8 +20,9 @@
 | [练习 16](#练习-16敌人计数器) | 敌人计数器 | 第 16 课 static 成员 |
 | [练习 17](#练习-17拷贝-vs-移动) | 拷贝 vs 移动 | 第 17 课 移动语义 |
 | [练习 18](#练习-18ub-清单与防线) | UB 清单与防线 | 第 18 课 未定义行为 |
+| [练习 19](#练习-19结课项目--回合制战斗) | **结课项目：回合制战斗** | 第 19 课 结课项目 |
 
-**当前作业：练习 18**
+**当前作业：练习 19（结课项目）**
 
 ---
 
@@ -1344,3 +1345,235 @@ if (hp < 0)
 ```
 
 **想想什么时候该用 `assert`（bug），什么时候该用运行时检查（可恢复的错误）。**
+
+---
+
+## 练习 19：结课项目 —— 回合制战斗
+
+目录：`cpp-learning\final\`
+
+### 文件结构（必须）
+
+```
+final/
+├── character.h      character.cpp      ← 基类
+├── player.h         player.cpp         ← 玩家（含背包）
+├── enemy.h          enemy.cpp          ← 敌人（Orc / Boss / Elite）
+├── battle.h         battle.cpp         ← 战斗流程
+└── main.cpp                            ← 只做输入输出
+```
+
+**编译：**
+
+```
+g++ -std=c++17 -Wall -Wextra -o app.exe main.cpp character.cpp player.cpp enemy.cpp battle.cpp
+```
+
+### 示例运行
+
+```
+==============================
+        RPG 战斗演示
+==============================
+请输入你的名字：Hero
+请输入血量（1-200）：100
+
+=== 你的角色 ===
+Hero  HP 100/100  ATK 15
+背包：药水 x3  炸弹 x1
+
+==============================
+ 第 1 回合
+==============================
+敌人：Orc(hp=40/40)  EliteGoblin(hp=30/30) [精英]  Dragon(hp=200/200) [Boss]
+
+请选择动作：
+  1. 攻击
+  2. 防御
+  3. 用药水
+  4. 逃跑
+> 1
+
+请选择目标：
+  1. Orc(hp=40/40)
+  2. EliteGoblin(hp=30/30)
+  3. Dragon(hp=200/200)
+> 1
+
+Hero 攻击 Orc，造成 15 伤害！
+Orc 剩余 25 血。
+
+Orc 反击 Hero，造成 8 伤害！
+EliteGoblin 反击 Hero，造成 10 伤害！
+Dragon 反击 Hero，造成 15 伤害！
+Hero 剩余 67 血。
+```
+
+### 类设计
+
+**`character.h` — 基类**
+
+```cpp
+class Character
+{
+protected:
+    std::string name;
+    int hp;
+    int max_hp;
+    int atk;
+
+public:
+    Character(std::string n, int h, int a);
+    virtual ~Character() = default;
+
+    std::string get_name() const;
+    int get_hp() const;
+    int get_max_hp() const;
+    int get_atk() const;
+    bool is_alive() const;
+    void take_damage(int dmg);        // hp 不为负
+
+    virtual int defense() const { return 0; }
+    virtual std::string type_name() const { return "角色"; }
+};
+
+std::ostream &operator<<(std::ostream &os, const Character &c);
+```
+
+**`player.h`**
+
+```cpp
+class Player : public Character
+{
+private:
+    std::map<std::string, int> bag_;
+    bool defending_;
+
+public:
+    Player(std::string n, int h);
+    void add_item(const std::string &item, int count);
+    bool use_item(const std::string &item);
+    int item_count(const std::string &item) const;
+    void set_defending(bool d);
+    int defense() const override;      // 防御时 5
+    void print_bag() const;
+};
+```
+
+**`enemy.h`**
+
+```cpp
+class Enemy : public Character { ... };           // 普通
+class Boss : public Enemy { int armor_; ... };    // 护甲
+class Elite : public Enemy { ... };               // 精英
+```
+
+**`battle.h`**
+
+```cpp
+enum class Action { Attack, Defend, Item, Flee, Unknown };
+
+class Battle
+{
+private:
+    Player &player_;
+    std::vector<std::unique_ptr<Enemy>> enemies_;
+    int round_;
+
+public:
+    Battle(Player &p);
+    void add_enemy(std::unique_ptr<Enemy> e);
+    bool all_dead() const;
+    bool run_round(std::istream &in, std::ostream &out);
+    int round() const;
+};
+```
+
+### 游戏规则
+
+| 项 | 规则 |
+|---|---|
+| 玩家初始 | HP 100，ATK 15，药水 3，炸弹 1 |
+| Orc | 40 HP，8 ATK |
+| EliteGoblin | 30 HP，10 ATK |
+| Boss Dragon | 200 HP，20 ATK，护甲 5 |
+| 攻击伤害 | `atk - 目标defense()`，**最小 1** |
+| 防御 | 本回合受伤减 5 |
+| 药水 | 回复 30（不超过 max_hp） |
+| 逃跑 | 立即结束（算失败） |
+| 胜利 | 所有敌人死亡 |
+| 失败 | 玩家死亡 |
+
+### 十二条要求
+
+1. 至少 4 个 `.h` + 4 个 `.cpp`
+2. 每个 `.h` 有 `#pragma once`
+3. 基类有 **`virtual ~Character() = default;`**
+4. 至少 **2 个派生类**
+5. 用 **`std::vector<std::unique_ptr<Enemy>>`** 装敌人
+6. 背包用 **`std::map<std::string, int>`**
+7. 动作用 **`enum class` + `switch`**
+8. 玩家输入用 **`cin` + `cin.fail()` 检查**
+9. 血量**永不为负**
+10. **零 UB**（不越界、不空指针解引用）
+11. **≥200 行**（不含空行和注释）
+12. 编译 **零警告**
+
+### 危险点
+
+**1. 头文件互相包含**
+
+`battle.h` 需要 `player.h` 和 `enemy.h`。**都在 `.h` 里 `#include`，不要靠 `.cpp` 传递。**
+
+**2. 循环里删除元素**
+
+```cpp
+for (auto &e : enemies_)
+{
+    if (!e->is_alive()) enemies_.erase(...);   // ❌ 迭代器失效（UB）
+}
+```
+
+**正确做法：用 `std::remove_if` + `erase`，或者先收集再删。**
+
+**3. `operator<<` 里写死 `std::cout`**
+
+**必须用参数 `os`。** 这个坑我们从第 12 课说过。
+
+**4. 敌人死亡后还会反击**
+
+**需要检查 `is_alive()` 再让它攻击。**
+
+**5. `vector` 扩容时 `unique_ptr` 移动**
+
+**`unique_ptr` 是 move-only，`vector` 扩容会自动移动——没问题。但如果用 `Player` 对象直接存，要注意拷贝成本。**
+
+### 自测边界
+
+| 试什么 | 期望 |
+|---|---|
+| 运行 | 能完整玩一局到胜利或失败 |
+| 血量受重击 | **归 0，不为负** |
+| 输入 `abc` | **报错退出，不崩溃** |
+| 输入 `9`（无效动作） | **提示无效，重新选择** |
+| 已死亡的敌人 | **不再反击、不再出现在目标列表** |
+| 药水用完后再用 | **提示没有药水** |
+| 逃跑 | **立即结束战斗** |
+| 行数 | `find /c /v ""` 或数一下，**≥200** |
+| 编译 | **零警告** |
+
+### 进阶（可选，做了加分）
+
+1. **炸弹**：对**所有敌人**造成 15 伤害
+2. **存档**：用 `std::ofstream` 把玩家状态写到 `save.txt`，下次启动自动读
+3. **更聪明的 AI**：Boss 血量低于 30% 时攻击力翻倍
+4. **`std::array`**：把三个敌人放进 `std::array<std::unique_ptr<Enemy>, 3>`
+
+### 提交前自查
+
+- [ ] 12 条要求逐条打勾
+- [ ] 玩一遍完整流程
+- [ ] 故意输错几次输入，程序不崩
+- [ ] 零警告编译
+
+**这个项目预计 3–6 小时。** 不用一次写完——先让程序能跑起来（哪怕只有"攻击"一个动作），再逐步加功能。
