@@ -1,6 +1,6 @@
 # 学习进度
 
-> **最后更新**：2026-11-09
+> **最后更新**：2026-11-10
 
 - 学什么 → [cpp-schedule.md](cpp-schedule.md)｜怎么教 → [teaching-notes.md](teaching-notes.md)｜作业要求 → [assignments.md](assignments.md)｜启动指令 → [START-HERE.md](START-HERE.md)
 
@@ -10,8 +10,8 @@
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 第 16 课（static 成员与静态函数），practice16.cpp ✅ 实测通过 |
-| 下一课 | 第 17 课：移动语义、拷贝控制 |
+| 已完成 | 第 17 课（移动语义、拷贝控制），practice17.cpp ✅ 实测通过 |
+| 下一课 | 第 18 课：未定义行为与防御性编程 |
 | 学生水平 | 有 Python/Java 概念，C++ 从零起步 |
 
 ---
@@ -39,6 +39,7 @@
 | 14.5 | map 与 unordered_map | practice14b.cpp | ✅ |
 | 15 | 多文件工程 | practice15/（enemy.h + enemy.cpp + main.cpp） | ✅ |
 | 16 | static 成员与静态函数 | practice16.cpp | ✅ |
+| 17 | 移动语义、拷贝控制 | practice17.cpp | ✅ |
 
 > practice04b.cpp 兼作循环补充与函数重构成果，没有单独的 practice05。
 
@@ -66,10 +67,11 @@
 | 14.5 | **`std::map` / `std::unordered_map`**、`operator[]` 自动插入、`find`+`end()`、`count`（数键不数值）、`erase`、结构化绑定 `[k, v]`、有序 vs 查找速度的取舍 |
 | 15 | **多文件工程**：`.h` 声明 vs `.cpp` 实现、`#pragma once`、`类名::` 作用域、多文件编译命令、`undefined reference`（链接错误） |
 | 16 | **`static` 成员变量**（类里声明、类外定义、全类共享一份）、**`static` 成员函数**（无 `this`、不能碰普通成员）、`this` 指针（指向当前对象、`const` 函数里是 `const 类名*`） |
+| 17 | **左值与右值**、**右值引用 `T&&`**、**`std::move`**（只标记不移动）、**移动构造 / 移动赋值**、moved-from 状态、**Rule of Five**（声明移动会删除拷贝 → move-only） |
 
 **已讲解未练习**：无
 
-**尚未接触**：移动语义
+**尚未接触**：未定义行为（第 18 课）
 
 **待补练**：
 
@@ -103,6 +105,13 @@
 
 - [ ] `static` 成员**类里只写声明**，必须在类外定义一次（`int Enemy::total = 0;`），否则 `undefined reference`
 - [ ] **静态成员变量只能由构造/析构维护**：`reset_total()` 强行清零会让计数与真实对象数脱钩，后续析构把 `total` 减成负数（practice16 实测到 -2）
+
+**概念易混（第 17 课发现）**：
+
+- [ ] **`const T&` 也能接右值**：所以「不写 `&&` 也能编译」，只是退化成拷贝或被复制消除
+- [ ] **`const T&` 里不能 `std::move`**：`const` 让 move 失效，且违背「拷贝不动原件」的承诺；想搬必须用 `T&&`
+- [ ] **只写移动构造 → 拷贝构造被隐式删除**，类变成 move-only，传左值直接编译失败
+- [ ] **`std::move(临时对象)` 是多余且有害的**：触发 `-Wpessimizing-move`，反而阻止复制消除
 
 **已借用但没正式教**（🔵 看过、不用会写，勿进「已掌握」）：
 
@@ -143,4 +152,4 @@
 
 ## 待办
 
-- [ ] 第 17 课：移动语义、拷贝控制——课表要求：说清 `std::move` 前后对象各处于什么状态；解释 Rule of Three 为什么成立
+- [ ] 第 18 课：未定义行为与防御性编程——课表要求：列出 4 种 UB，各写一个能触发的最小例子，并说出正确写法

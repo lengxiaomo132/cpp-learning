@@ -55,16 +55,16 @@ int main()
     }
     {
         std::cout << "\n=== 2. 右值：移动 ===\n";
-        Enemy d = std::move(Enemy{"Dragon", 200});
-        std::cout << "临时变量先构造,在被移动构造给c,最后name为 \"\" 的临时变量结束生命周期析构\n";
-    
-    
+        Enemy tmp{"Dragon", 200};
+        Enemy d = std::move(tmp);
+        std::cout << "临时变量先构造,在被移动构造给d,最后name为 \"\" 的临时变量结束生命周期析构\n";
+
         std::cout << "\n=== 3. std::move 之后 ===\n";
         std::cout << "move 前 d.name=\"" << d.get_name() << '\"' << '\n';
         Enemy e = std::move(d);
         std::cout << "e.name=\"" << e.get_name() << '\"' << '\n';
         std::cout << "d.name=\"" << d.get_name() << '\"' << "        <- 被搬空" << '\n';
-        std::cout << "d.hp=\"" << d.get_hp() << '\"' << "         <- int 是复制的" << '\n';
+        std::cout << "d.hp=" << d.get_hp() <<"         <- int 是复制的" << '\n';
     }
     {
         std::cout << "\n=== 4. push_back 的区别 ===\n";
@@ -74,6 +74,13 @@ int main()
         v.push_back(s);
         std::cout << "临时对象：\n";
         v.push_back(Enemy{"Bat", 5});
+    }
+    {
+        std::cout << "\n=== 5. 拷贝赋值 vs 移动赋值 ===\n";
+        Enemy g{"Knight", 50};
+        Enemy h{"Mage", 40};
+        h = g;
+        h = Enemy{"Thief", 20};
     }
     return 0;
 }
