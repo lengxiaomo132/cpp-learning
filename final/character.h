@@ -29,7 +29,7 @@ public:
     } // hp 不为负
 
     virtual int defense() const { return 0; }
-    virtual std::string type_name() const { return "角色"; }
+    virtual std::string type_name() const { return "Character"; }
 };
 
 std::ostream &operator<<(std::ostream &os, const Character &c)
