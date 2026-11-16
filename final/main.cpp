@@ -18,7 +18,8 @@ int main()
 
     Player b{"mortis", 50};
     std::cout << b;
-    b.add_item("potion",3);
+    b.add_item("potion",-3);
+    b.add_item("bomb",-3);
     b.print_bag();
 
 

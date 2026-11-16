@@ -1,8 +1,11 @@
 // player.h
 #pragma once
 
-#include "character.h"
+#include <iostream>
 #include <map>
+#include <string>
+
+#include "character.h"
 
 class Player : public Character
 {
@@ -16,7 +19,12 @@ public:
         bag_["potion"] = 3;
         bag_["bomb"] = 1;
     }
-    void add_item(const std::string &item, int count) { bag_[item] += count; }
+    void add_item(const std::string &item, int count)
+    {
+        bag_[item] += count;
+        if (bag_[item] < 0)
+            bag_[item] = 0;
+    }
     bool use_item(const std::string &item)
     {
         auto it = bag_.find(item);
@@ -52,10 +60,18 @@ public:
     } // 防御时 5
     void print_bag() const
     {
+        bool empty = false;
         std::cout << "Bag: ";
         for (const auto &[k, v] : bag_)
         {
-            std::cout << k << 'x' << v << ' ';
+            if (v != 0)
+            {
+                std::cout << k << " x" << v << ' ';
+                empty = true;
+            }
         }
+        if (empty == false)
+            std::cout << "(empty)";
+        std::cout << '\n';
     }
 };

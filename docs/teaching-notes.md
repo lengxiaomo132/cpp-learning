@@ -160,3 +160,22 @@ input.txt 用 ASCII 编码，行尾 `\r\n`。
 **原因**：Windows 上文件的原子替换被临时占用挡住（VS Code 打开中、杀软扫描、索引服务）。**属偶发，不是持续故障。**
 
 **处理**：改用 `edit` 分段替换，或先把编辑拆成多次小改动。**不要反复重试同一整文件写入。**
+
+## VS Code 红色波浪线误报
+
+**现象**：代码本身正确，但 IntelliSense 报错（如 `'cout' is not a member of 'std'`、整段解析失败）。
+
+**已发生**：`player.h` 里的结构化绑定配合 `cout` 被误报，重启 VS Code 后消失。
+
+**判断方法**：**先在终端跑真实编译，不要信红波浪线。**
+
+```
+g++ -std=c++17 -Wall -Wextra -c 文件.cpp -o 文件.o
+```
+
+| 终端结果 | 含义 |
+|---|---|
+| 不报错 | **IDE 误报**，重启 VS Code 或用 `Ctrl+Shift+P` → `C/C++: Reset IntelliSense Database` |
+| 报错 | 真错误，按报错改 |
+
+**规则：以编译器为准，不以 IDE 为准。**

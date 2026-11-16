@@ -34,6 +34,6 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const Character &c)
 {
-    os << c.get_name() << "(hp=" << c.get_hp() <<'/'<<c.get_max_hp()<<')';
+    os << c.get_name() << "(hp=" << c.get_hp() <<'/'<<c.get_max_hp()<<')' << '\n';
     return os;
 };
