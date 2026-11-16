@@ -16,6 +16,12 @@ int main()
     //std::cin >> hp;
     
     //std::cout << "\n=== 你的角色 ===\n";
+    Character a{"12", 100, 10};  
+    std::cout << a;
+    a.take_damage(1000);
+       
+    std::cout<< a.get_hp()<<'\n';
+    std::cout<< a.is_alive()<<'\n';
 
 
 
