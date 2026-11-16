@@ -2,7 +2,7 @@
 #pragma once
 
 #include <string>
-#include <iostream>
+#include <ostream>
 
 class Character
 {
@@ -34,6 +34,6 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const Character &c)
 {
-    os << c.get_name() << "(hp=" << c.get_hp() <<'/'<<c.get_max_hp()<<")\n";
+    os << c.get_name() << "(hp=" << c.get_hp() <<'/'<<c.get_max_hp()<<')';
     return os;
 };
