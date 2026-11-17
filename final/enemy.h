@@ -31,6 +31,7 @@ std::ostream &operator<<(std::ostream &os, const Boss&c) // 打印Boss信息“[
 
 class Elite : public Enemy // 精英敌人类
 {
+    public:
     Elite(std::string n, int h, int a) : Enemy(n, h, a) {}     // 创建精英敌人
     std::string type_name() const override { return "Elite"; } // 类标注“精英”
 };
