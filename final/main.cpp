@@ -11,21 +11,18 @@ int main()
     std::cout << "        RPG 战斗演示\n";
     std::cout << "==============================\n";
 
-    Character a{"liam", 100, 10};
-    std::cout << a;
-    a.take_damage(1000);
+    Player hero{"mortis", 100};
+    hero.add_item("potion", 0);
+    hero.add_item("bomb", 0);
+    std::cout << hero;
+    hero.print_bag();
 
-    std::cout << a.get_hp() << '\n';
-    std::cout << a.is_alive() << '\n';
-
-    Player b{"mortis", 50};
-    std::cout << b;
-    b.add_item("potion", -3);
-    b.add_item("bomb", -3);
-    b.print_bag();
-
-    Battle battle(b);
+    Battle battle{hero};
     battle.add_enemy(std::make_unique<Enemy>("Orc", 40, 8));
     battle.add_enemy(std::make_unique<Elite>("EliteGoblin", 30, 10));
-    battle.run_round(std::cin, std::cout);
+    
+    while (battle.run_round(std::cin, std::cout)){}
+
+    std::cout << "Finish.";
+
 }
