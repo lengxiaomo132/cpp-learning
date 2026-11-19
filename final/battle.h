@@ -50,12 +50,12 @@ public:
         {
             if (in.eof()) // Ctrl+D 式退出
             {
-                std::cout << "\n输入结束，退出。\n";
+                std::cout << "\nInput finished, exiting。\n";
                 return 0; // 结束战斗
             }
             in.clear();
             in.ignore(1000, '\n');
-            std::cout << "请输入数字\n";
+            std::cout << "Please enter number\n";
             return 1;
         }
         std::cout << "\033[2J\033[H"; // 清屏 + 光标移到左上角
@@ -79,12 +79,12 @@ public:
     bool run_round(std::istream &in, std::ostream &out) // 战斗回合功能
     {
         round_++;
-        out << "\n=== 第 " << round_ << " 回合 ===\n";
+        out << "\n=== Round " << round_ << " ===\n";
 
         out << player_; // 打印玩家信息
         print_eneies();
         // 选择动作
-        out << "Action\n1.Attack 2.Defend 3.Item 4.Flee(输入数字)\n>";
+        out << "Action\n1.Attack 2.Defend 3.Item 4.Flee (Please enter number)\n>";
         int choice = 0;
         in >> choice;
         {
@@ -116,7 +116,7 @@ public:
         {
         case Action::Attack:
         {
-            out << "玩家选择：攻击\n";
+            out << "Player choice: Attack\n";
             // 1. 先收集活着的敌人的下标
             std::vector<std::size_t> alive;
             for (std::size_t i = 0; i < enemies_.size(); ++i)
@@ -125,18 +125,18 @@ public:
                     alive.push_back(i);
             }
             // 2. 打印（编号 = 收集顺序 + 1）
-            out << "地敌人列表：\n";
+            out << "Enemy list:\n";
             for (std::size_t k = 0; k < alive.size(); ++k)
             {
                 out << "  " << (k + 1) << ". " << *enemies_[alive[k]] << '\n';
             }
             // 3. 读入
-            out << "请选择目标：\n";
+            out << "Please choose a target:\n";
             int choice = 0;
             in >> choice;
             if (choice < 1 || choice > static_cast<int>(alive.size())) // 检测输入范围
             {
-                out << "无效目标\n";
+                out << "Invalid target\n";
                 return true;
             }
             {
@@ -157,39 +157,39 @@ public:
                 if (dmg < 1)                                            // 造成伤害至少为1
                     dmg = 1;
                 enemies_[idx]->take_damage(dmg);
-                out << player_.get_name() << " 攻击 " << enemies_[idx]->get_name()
-                    << ", 造成 " << dmg << " 伤害! \n";
+                out << player_.get_name() << " attack " << enemies_[idx]->get_name()
+                    << ", cause " << dmg << " damage! \n";
                 if (enemies_[idx]->is_alive())
                 {
                     out << enemies_[idx]->get_name()
-                        << " 剩余 " << enemies_[idx]->get_hp() << " 血.\n";
+                        << " remain " << enemies_[idx]->get_hp() << " hp.\n";
                 }
                 else
                     out << enemies_[idx]->get_name()
-                        << " 死亡.\n";
+                        << " Death.\n";
             }
             break;
         }
         case Action::Defend:
-            out << "玩家选择：防御\n";
+            out << "Player chooses: Defense\n";
             player_.set_defending(true);
-            out << player_.get_name() << " 进入防御姿态，本回合减伤 " << 5 << ".\n";
+            out << player_.get_name() << " Enter a defensive stance, reduce damage by 5 this turn.\n";
             break;
         case Action::Item:
-            std::cout << "玩家选择：道具\n";
+            std::cout << "Player Choice: Items\n";
             if (player_.use_item("potion"))
             {
                 player_.healing(30);
-                out << player_.get_name() << "回复 30 hp, " << player_ << '\n';
+                out << player_.get_name() << "restore 30 hp, " << player_ << '\n';
             }
             else
             {
-                out << "没有药水了\n";
+                out << "There's no more potion.\n";
             }
             break;
         case Action::Flee:
-            std::cout << "玩家选择：逃跑\n"
-                      << "成功逃跑了\n";
+            std::cout << "Player choice: Flee\n"
+                      << "Successfully escaped\n";
             return false;
             break;
         case Action::Unknown:
@@ -204,7 +204,7 @@ public:
         // 检测敌人死完了吗
         if (all_dead())
         {
-            out << "敌人全灭！";
+            out << "All enemies destroyed!";
             return false;
         }
         // if (!player_.is_alive()) return false; //检查玩家死亡
@@ -217,11 +217,11 @@ public:
                 if (back_dmg < 1)                                // 反击数值至少为1
                     back_dmg = 1;
                 player_.take_damage(back_dmg); // 对玩家造成伤害
-                out << p->get_name() << " 反击 " << player_.get_name()
-                    << ", 造成 " << back_dmg << " 伤害!\n";
+                out << p->get_name() << " counterattack " << player_.get_name()
+                    << ", cause " << back_dmg << " damage!\n";
                 if (!player_.is_alive()) // 检测玩家死亡
                 {
-                    out << player_.get_name() << " 被 " << p->get_name() << " 击败.\n";
+                    out << player_.get_name() << " id defeated by " << p->get_name() << ".\n";
                     return false;
                 }
             }

@@ -9,7 +9,7 @@
 int main()
 {
     std::cout << "==============================\n";
-    std::cout << "        RPG 战斗演示\n";
+    std::cout << "       RPG Battle Demo\n";
     std::cout << "==============================\n";
 
     Player hero{"mortis", 100};
