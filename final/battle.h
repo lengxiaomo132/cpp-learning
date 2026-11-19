@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <memory> // unique_ptr, make_unique
+#include <chrono>
+#include <thread>
 
 #include "player.h"
 #include "enemy.h"
@@ -26,10 +28,12 @@ private:
 
 public:
     Battle(Player &p) : player_(p), round_(0) {} // 创建战斗类，初始回合数为1
+
     void add_enemy(std::unique_ptr<Enemy> e)
     {
         enemies_.push_back(std::move(e)); // 加入敌人到敌人列表
     }
+
     bool all_dead() const // 检查敌人存活
     {
         for (const auto &p : enemies_)
@@ -39,16 +43,36 @@ public:
         }
         return true;
     }
+
+    int check_input(std::istream &in)
+    {
+        if (in.fail())
+        {
+            if (in.eof()) // Ctrl+D 式退出
+            {
+                std::cout << "\n输入结束，退出。\n";
+                return 0; // 结束战斗
+            }
+            in.clear();
+            in.ignore(1000, '\n');
+            std::cout << "请输入数字\n";
+            return 1;
+        }
+        std::cout << "\033[2J\033[H"; // 清屏 + 光标移到左上角
+        return 2;
+    }
+
     void print_eneies() // 打印敌人信息
     {
         std::cout << "Enemies:\n";
         int order = 0;
         for (const auto &p : enemies_)
         {
-
             if (p->is_alive() == true)
+            {
                 order++;
-            std::cout << order << '.' << *p;
+                std::cout << order << '.' << *p;
+            }
         }
     }
 
@@ -63,13 +87,18 @@ public:
         out << "Action\n1.Attack 2.Defend 3.Item 4.Flee(输入数字)\n>";
         int choice = 0;
         in >> choice;
-        if (in.fail())
         {
-            in.clear();
-            in.ignore(1000, '\n');
-            out << "请输入数字\n";
-            return true;
+            int check = check_input(in);
+            if (check == 0)
+            {
+                return false;
+            }
+            else if (check == 1)
+            {
+                return true;
+            }
         }
+
         Action a = Action::Attack;
         if (choice == 1)
             a = Action::Attack;
@@ -86,29 +115,61 @@ public:
         switch (a)
         {
         case Action::Attack:
+        {
             out << "玩家选择：攻击\n";
-            print_eneies();
-            out << "选择你要攻击的敌人:";
-            in >> choice;
-            if (in.fail())
+            // 1. 先收集活着的敌人的下标
+            std::vector<std::size_t> alive;
+            for (std::size_t i = 0; i < enemies_.size(); ++i)
             {
-                in.clear();
-                in.ignore(1000, '\n');
-                out << "请输入数字\n";
+                if (enemies_[i]->is_alive())
+                    alive.push_back(i);
+            }
+            // 2. 打印（编号 = 收集顺序 + 1）
+            out << "地敌人列表：\n";
+            for (std::size_t k = 0; k < alive.size(); ++k)
+            {
+                out << "  " << (k + 1) << ". " << *enemies_[alive[k]] << '\n';
+            }
+            // 3. 读入
+            out << "请选择目标：\n";
+            int choice = 0;
+            in >> choice;
+            if (choice < 1 || choice > static_cast<int>(alive.size())) // 检测输入范围
+            {
+                out << "无效目标\n";
                 return true;
             }
-            if (enemies_[choice - 1]->is_alive())
             {
-                int dmg = player_.get_atk() - enemies_[choice - 1]->defense(); // 计算伤害值
-                if (dmg < 1) // 造成伤害至少为1
+                int check = check_input(in);
+                if (check == 0)
+                {
+                    return false;
+                }
+                else if (check == 1)
+                {
+                    return true;
+                }
+            }
+            std::size_t idx = alive[static_cast<std::size_t>(choice - 1)];
+            if (enemies_[idx]->is_alive())
+            {
+                int dmg = player_.get_atk() - enemies_[idx]->defense(); // 计算伤害值
+                if (dmg < 1)                                            // 造成伤害至少为1
                     dmg = 1;
-                enemies_[choice - 1]->take_damage(dmg);
-                out << player_.get_name() << " 攻击 " << enemies_[choice - 1]->get_name()
-                    << ", 造成 " << dmg << " 伤害! \n"
-                    << enemies_[choice - 1]->get_name()
-                    << " 剩余 " << enemies_[choice - 1]->get_hp() << " 血.\n";
+                enemies_[idx]->take_damage(dmg);
+                out << player_.get_name() << " 攻击 " << enemies_[idx]->get_name()
+                    << ", 造成 " << dmg << " 伤害! \n";
+                if (enemies_[idx]->is_alive())
+                {
+                    out << enemies_[idx]->get_name()
+                        << " 剩余 " << enemies_[idx]->get_hp() << " 血.\n";
+                }
+                else
+                    out << enemies_[idx]->get_name()
+                        << " 死亡.\n";
             }
             break;
+        }
         case Action::Defend:
             out << "玩家选择：防御\n";
             player_.set_defending(true);
@@ -139,6 +200,13 @@ public:
             std::cout << "内部错误：未处理的动作\n";
             break;
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));    // 停 1.5 秒
+        // 检测敌人死完了吗
+        if (all_dead())
+        {
+            out << "敌人全灭！";
+            return false;
+        }
         // if (!player_.is_alive()) return false; //检查玩家死亡
         // 敌人反击
         for (const auto &p : enemies_)
@@ -158,6 +226,7 @@ public:
                 }
             }
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));    // 停 1.5 秒
         return true;
     }
     int get_round() const { return round_; };
