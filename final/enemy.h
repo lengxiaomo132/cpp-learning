@@ -23,15 +23,11 @@ public:
     std::string type_name() const override { return "Boss"; } // 类标注“Boss”
 };
 
-std::ostream &operator<<(std::ostream &os, const Boss&c) // 打印Boss信息“[Boss].name(hp=.hp/.max_hp)”
-{
-    os << "[Boss]" << c.get_name() << "(hp=" << c.get_hp() << '/' << c.get_max_hp() << ')' << '\n';
-    return os;
-};
+std::ostream &operator<<(std::ostream &os, const Boss &c); // 打印Boss信息“[Boss].name(hp=.hp/.max_hp)”
 
 class Elite : public Enemy // 精英敌人类
 {
-    public:
+public:
     Elite(std::string n, int h, int a) : Enemy(n, h, a) {}     // 创建精英敌人
     std::string type_name() const override { return "Elite"; } // 类标注“精英”
 };

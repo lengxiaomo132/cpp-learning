@@ -1,6 +1,6 @@
 # 学习进度
 
-> **最后更新**：2026-11-10
+> **最后更新**：2026-11-20
 
 - 学什么 → [cpp-schedule.md](cpp-schedule.md)｜怎么教 → [teaching-notes.md](teaching-notes.md)｜作业要求 → [assignments.md](assignments.md)｜启动指令 → [START-HERE.md](START-HERE.md)
 
@@ -10,8 +10,8 @@
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 第 18 课（未定义行为与防御性编程），practice18.cpp ✅ 实测通过 |
-| 下一课 | 第 19 课：结课项目（practice08 升级版） |
+| 已完成 | **全部课程（1–19）**，第 19 课结课项目 `final/` ✅ 实测通过 |
+| 下一课 | 无（课表已完成） |
 | 学生水平 | 有 Python/Java 概念，C++ 从零起步 |
 
 ---
@@ -41,6 +41,7 @@
 | 16 | static 成员与静态函数 | practice16.cpp | ✅ |
 | 17 | 移动语义、拷贝控制 | practice17.cpp | ✅ |
 | 18 | 未定义行为与防御性编程 | practice18.cpp | ✅ |
+| 19 | 结课项目：回合制战斗 | final/（4 个 .h + 5 个 .cpp，412 行） | ✅ |
 
 > practice04b.cpp 兼作循环补充与函数重构成果，没有单独的 practice05。
 
@@ -70,10 +71,11 @@
 | 16 | **`static` 成员变量**（类里声明、类外定义、全类共享一份）、**`static` 成员函数**（无 `this`、不能碰普通成员）、`this` 指针（指向当前对象、`const` 函数里是 `const 类名*`） |
 | 17 | **左值与右值**、**右值引用 `T&&`**、**`std::move`**（只标记不移动）、**移动构造 / 移动赋值**、moved-from 状态、**Rule of Five**（声明移动会删除拷贝 → move-only） |
 | 18 | **未定义行为（UB）** 的概念与 4 种常见类型（容器越界、未初始化、悬垂指针、空指针）、`operator[]` vs `at()`、**`assert`**、不变量、`boolalpha`、`(void)x` 消除 unused 警告 |
+| 19 | **综合运用**：多文件工程（4 个 `.h` + 5 个 `.cpp`）、继承体系（`Character` → `Player` / `Enemy` → `Boss` / `Elite`）、虚函数 `defense()` / `type_name()`、`vector<unique_ptr>` 容器、`map` 背包、`enum class` + `switch` 动作分发、输入验证、清屏与延时 |
 
 **已讲解未练习**：无
 
-**尚未接触**：无（课表剩余只有第 19 课项目）
+**尚未接触**：无（课表已完成）
 
 **待补练**：
 
@@ -154,9 +156,12 @@
 | `operator<<` 里写死 `std::cout` | 未发生（预防） | 函数里该用参数 `os` 却用了 `std::cout`，导致 `cerr`、文件流全部输出到屏幕，且**编译不报错** | 写 `operator<<` 时通读一遍：有没有直接出现 `std::cout` |
 | 忘了带括号调用函数 | 1 次 | `d.get_name` 少了 `()`，报 `<unresolved overloaded function type>` | 打印函数返回值时检查有没有 `()` |
 | 字符串字面量当成 `std::string` 用 | 1 次 | `max_of("apple","pear")` 推导成 `const char*`，比较指针地址，结果 `apple` 而非 `pear`，**编译不报错** | 要比较内容就写 `std::string("...")` |
+| 类外函数写在 `.h` 里没加 `inline` | 1 次 | `operator<<` 在两个 `.cpp` 里各有一份定义，链接报 `multiple definition` | 类外函数放 `.h` 就加 `inline`，或挪进 `.cpp` |
+| 状态忘记重置 | 1 次 | `defending_` 设为 `true` 后从不清理，之后每回合永久减伤 | 临时状态要在回合结束时恢复 |
 
 ---
 
 ## 待办
 
-- [ ] 第 19 课：结课项目（practice08 升级版）——课表要求：多文件拆分 + class 封装 + Enemy 继承 + map 背包 + 玩家自主选动作，≥200 行
+- [x] 全部 19 课完成
+- [ ] 下一步（待定）：线性代数 + 图形、CMake、或继续做更大的游戏
